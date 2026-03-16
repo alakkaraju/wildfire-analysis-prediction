@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Lakkaraju_Wildfires.knit</title>
+    <meta charset="utf-8" />
+    <script src="libs/header-attrs-2.30/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+    <script src="libs/kePrint-0.0.1/kePrint.js"></script>
+    <link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: title-slide
+background-image: url(https://i.pinimg.com/736x/bc/61/ac/bc61aca2d944ca77de4856474f668145.jpg)
+background-size: cover
+background-position: center
+
+&lt;div style="position: absolute; top: 50%; left: 10%; right: 10%; transform: translateY(-50%); background-color: rgba(255,255,255,0.3); padding: 20px; border-radius: 10px; text-align: center;"&gt;
+  &lt;h1 style="color: white;"&gt;From Creation to Prevention, Predicting Wildfire Incidences in the United States. &lt;/h1&gt;
+  &lt;h2 style="color: white;"&gt;Ashika Lakkaraju&lt;/h2&gt;
+  &lt;h2 style="color: white;"&gt;March 2026&lt;/h2&gt;
+  &lt;h3 style="color: white;font-size: 26px;"&gt;STA 141A | Made with Xaringan&lt;/h3&gt;
+&lt;/div&gt;
+
+---
+
+
+
+# &lt;span style="color: #2d6a4f;"&gt;Abstract&lt;/span&gt;  
+----
+Across the continental United States, there are records of over 188 Million wildfires dating back to 1992.  
+
+The goal of this analysis is to successfuly adapt a model that predicts **the probability of a wildfire occurring in a location during a certain time.**
+
+The **objective** explores the influence of **main causes** of notable fires paired with **time and location**. There is a lack of exploration in finding connections between **causes, seasonality, and location of fires.** By investigating the past, we are able to create predictions and be proactive for the future. 
+
+- **Main method** `\(\rightarrow\)` Identify notable fires, analyze trends, evaluate predictor models 
+- **Predictor Models** `\(\rightarrow\)` Logistic Regression (Baseline) &amp; Random Forest
+- **Key Results** `\(\rightarrow\)` Random Forest performed better at 97.9% accuracy 
+- **Takeaway** `\(\rightarrow\)` Seasonality and Geographic location can significantly help predict fire risk before it occurs
+
+---
+
+# &lt;span style="color: #2d6a4f;"&gt;Background&lt;/span&gt;   
+----
+.pull-left[
+  ***Why should we focus on wildfires?***
+
+Like most natural disasters, wildfires are **complicated but compelling**. They are both destructive to an environment while necessary to protect it. However, **in light of climate change**, longer dry periods lead to longer and larger fires. When left unchecked, they are dangerous and ecosystem enders.  
+
+By being able to predict **where and when fires occur** can help with:
+- Educating and informing communities about risks
+- Firefighters who need to understand the constraints
+- Estimating when another fire can start next 
+]
+
+.pull-right[
+  ![](https://i.pinimg.com/1200x/0a/88/ad/0a88ad260b4abc97132def31cb7f65b5.jpg)
+]
+
+
+---
+
+class: inverse, center, middle
+background-color: #2c4a2e
+
+# Data Preprocessing
+&lt;p style="color: white; font-size: 22px;"&gt;Preparing the dataset for modeling.&lt;/p&gt;
+
+---
+
+# &lt;span style="color: #2d6a4f;"&gt;Data Preparation&lt;/span&gt;  
+----
+.pull-left[
+&lt;span style="color: #2d6a4f;"&gt;**Identifying Notable Fires**&lt;/span&gt;  
+- Defined as a fire &amp;ge; 300 acres and is the chosen cut-off
+- By removing small wildfires, the data is less skewed (smaller fires are more frequent)
+- Entire dataset is filtered by their size
+
+&lt;span style="color: #2d6a4f;"&gt; **Space-Time Units**&lt;/span&gt; 
+- Constructed by combining 
+  - YY-MM-DD
+  - The cause of the fire
+  - Latitude and longitude of the origin
+- By arranging the dataset in this order, we can built a binary classifier
+]
+
+.pull-right[
+&lt;span style="color: #2d6a4f;"&gt;**Defining the Binary Variable**&lt;/span&gt; 
+- Did at least one notable wildfire occur in that state in that month? 
+  - `1` = Yes 
+  - `0` = No 
+- Includes main cause and average size of the fire 
+- Better visualization where the biggest fires on average happen in a state in a given month 
+
+&lt;span style="color: #2d6a4f;"&gt;**Temporal Coverage**&lt;/span&gt; 
+- Training data: 1992–2008 
+- Test data: 2009–2015
+- The dataset is roughly split 70/30
+- Includes both fire and non-fire datapoints 
+]
+
+---
+
+# &lt;span style="color: #2d6a4f;"&gt;Predictors and Missing Data&lt;/span&gt;  
+----
+.pull-left[
+&lt;span style="color: #2d6a4f;"&gt;**Chosen Predictors**&lt;/span&gt; 
+- `STATE` — geographic variation
+- `FIRE_MONTH` — seasonal patterns
+- `FIRE_YEAR` — long-term seasonality
+- `MAIN_CAUSE` - reason for fire 
+- `AVG_SIZE` - average size of fire 
+- `avg_lat` / `avg_lon` — mean coordinates of fires
+
+These predictors are **intentional**, because it sets up further understanding into how causes of fires can affect their size and seasonality. This connection is further investigated in the exploratory analysis. Including model improvements. 
+]
+
+.pull-right[
+&lt;span style="color: #2d6a4f;"&gt;**Missing Data**&lt;/span&gt; 
+- Non-fire months have no coordinates → filled with state average lat/lon
+- `main_cause` is `NA` for non-fire months → labelled *"No Fire"* 
+- Ultimately, all missing values get filtered out
+
+Initially, there was trouble with the prediction models to accurately split the testing and training data because of the interference of missing values. A binary outcome of `0` meant there was no fire, therefore no data. **This leakage was fixed** by replacing `avg_lat/avg_long` as 0. This made sure no fires are accompanied with no location. 
+]
+---
+
+# &lt;span style="color: #2d6a4f;"&gt;Summary Table&lt;/span&gt;  
+----
+&lt;table style="width:100%; font-size:16px;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Variable &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Type &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Description &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Role &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Missing &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; STATE &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Categorical &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; US state &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Predictor &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; None &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; FIRE_YEAR &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Numeric &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Year of observation (1992–2015) &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Predictor &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; None &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; FIRE_MONTH &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Factor &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Month of observation (1–12) &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Predictor &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; None &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; avg_lat &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Numeric &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Mean latitude of fires in group (state avg if no fire) &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Predictor &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Imputed with state average &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; avg_lon &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Numeric &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Mean longitude of fires in group (state avg if no fire) &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Predictor &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Imputed with state average &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; main_cause &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Categorical &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Most frequent fire cause in state-month group &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Predictor &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Filled as No Fire &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; avg_size &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Numeric &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Mean fire size in acres (fires ≥ 300 acres only) &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Predictor &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(212, 237, 218, 255) !important;"&gt; Filled as 0 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; num_fires &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Numeric &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Number of fires recorded in state-month group &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Derived &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Filled as 0 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;background-color: rgba(255, 243, 205, 255) !important;"&gt; fire_occurrence &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(255, 243, 205, 255) !important;"&gt; Binary &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(255, 243, 205, 255) !important;"&gt; 1 = at least one fire occurred, 0 = no fire &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(255, 243, 205, 255) !important;"&gt; Outcome &lt;/td&gt;
+   &lt;td style="text-align:left;background-color: rgba(255, 243, 205, 255) !important;"&gt; None &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p style="font-size:20px; color:#2c4a2e; margin-top:10px;"&gt;
+  Final dataset contains &lt;b&gt;12,096 state-month observations total&lt;/b&gt; over &lt;b&gt;24 years (1992–2015)&lt;/b&gt;, 
+  filtered to notable fires &amp;ge; 300 acres with a maximum recorded size of &lt;b&gt;344,833 acres&lt;/b&gt;.
+&lt;/p&gt;
+
+
+---
+
+class: inverse, center, middle
+background-color: #2c4a2e
+
+# Exploratory Data Analysis
+&lt;p style="color: white; font-size: 22px;"&gt;Investigating how causes of fires relate to location, seasonality, and size.&lt;/p&gt;
+
+---
+# &lt;span style="color: #2d6a4f;"&gt;Notable Wildfires in the US&lt;/span&gt;  
+![](Lakkaraju_Wildfires_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+
+&lt;p style="font-size:12px; text-align:center; color:#2c4a2e; margin-top:2px;"&gt;
+Investigating fire cause and size reveals that most notable wildfires stretch from the &lt;b&gt;Pacific Northwest&lt;/b&gt; to the &lt;b&gt;Southeast&lt;/b&gt;. Lightning dominates the PNW while the SE sees primarily Arson and Miscellaneous causes. A distinct cluster near the &lt;b&gt;Appalachian Mountains&lt;/b&gt; shows Arson and Campfires, which correlates to camping activities. The largest fires are mostly near Washington and Montana along the &lt;b&gt;Rocky Mountains&lt;/b&gt;, suggesting that while western fires are mostly &lt;b&gt;natural&lt;/b&gt;, other high-risk fires have &lt;b&gt;preventable&lt;/b&gt; origins.
+&lt;/p&gt;
+
+---
+# &lt;span style="color: #2d6a4f;"&gt;Wildfire Seasonality&lt;/span&gt;  
+
+.pull-left[
+&lt;img src="seasonality.gif" style="width:115%; margin-top:15px;"/&gt;
+]
+
+.pull-right[
+&lt;div style="font-size:14px; line-height:1.6;"&gt;
+
+🌱 &lt;b&gt;Spring (Mar–Apr)&lt;/b&gt;&lt;br&gt;
+Fires begin rising → dry vegetation and more turbulent weather patterns.
+
+&lt;br&gt;🌧 &lt;b&gt;Sudden drop in May&lt;/b&gt;&lt;br&gt;
+Possible external reason considering May is the transition between Spring and Summer.
+
+&lt;br&gt;🔥 &lt;b&gt;Summer (Jun–Aug)&lt;/b&gt;&lt;br&gt;
+Peak fire season → hot, dry conditions likely fuel the spread of fires.
+
+&lt;br&gt;❄️ &lt;b&gt;Winter (Nov–Jan)&lt;/b&gt;&lt;br&gt;
+Activity drops sharply as moisture returns and temperatures cool.
+&lt;br&gt;
+&lt;br&gt;&lt;span style="color:#2c4a2e;"&gt;By understanding &lt;b&gt;seasonality as it relates to the frequency&lt;/b&gt; of notable fires, it will help navigate what months to begin risk preparation. This graph compiles the average data from all years, which means this is &lt;b&gt;trend is cyclical in nature&lt;/b&gt;. Leading it to be a &lt;b&gt;strong predictor&lt;/b&gt; for the model to use in the future.&lt;/span&gt; 
+
+&lt;/div&gt;
+]
+
+---
+# &lt;span style="color: #2d6a4f;"&gt;Monthly Wildfire Counts by Cause&lt;/span&gt;
+
+.pull-left[
+&lt;img src="monthly_cause.gif" style="width:115%; margin-top:15px;"/&gt;
+&lt;img src="cause_legend.png" style="width:100%; margin-top:5px;"/&gt;
+]
+
+.pull-right[
+&lt;br&gt;
+⚡ **Lightning** surges in summer months (Jun-Aug) as main driver of fires
+
+🔥 **Arson &amp; Burning Debris** are relatively evenly spread which makes sense as it is not a natural cause and can happen year round 
+
+🌿 **Spring** Equipment use and debris burning peak in Mar-Apr 
+
+&lt;span style="color:#2c4a2e; font-size:16px;"&gt;This plot is helpful in understanding whether there is a &lt;b&gt;correlation between seasonality and cause&lt;/b&gt;. It links to the previous graph and aligns with the meteorological trends. An example is noticing how &lt;b&gt;lightning causes more fires&lt;/b&gt; in the summer because of &lt;b&gt;rising temperatures and dry vegetation&lt;/b&gt;.&lt;/span&gt;
+]
+
+---
+# &lt;span style="color: #2d6a4f;"&gt;Wildfire Hotspots in the US&lt;/span&gt;
+![](Lakkaraju_Wildfires_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+
+&lt;p style="font-size:18px; text-align:center; color:#2c4a2e; margin-top:2px;"&gt;
+For the sake of plot readability, Alaska and Hawaii have been omitted. There are two main hotspots shown in the graph. The &lt;b&gt;Pacific Northwest&lt;/b&gt;and the &lt;b&gt;Southeast&lt;/b&gt;. This confirms that &lt;b&gt;geography and location&lt;/b&gt; are strong predictors of fire occurrence for the model. It also &lt;b&gt;validates the graph of notable fires&lt;/b&gt; by emphasizing the density of fires on average in a heatmap.&lt;/p&gt;
+---
+class: inverse, center, middle
+background-color: #2c4a2e
+
+# Model Fitting
+&lt;p style="color: white; font-size: 22px;"&gt;After exploring the underlying patterns in the data, it's time to evaluate models.&lt;/p&gt;
+
+---
+# &lt;span style="color: #2d6a4f;"&gt;Model Specification&lt;/span&gt;
+----
+.pull-left[
+### &lt;span style="color: #2c4a2e;"&gt;Logistic Regression (Baseline)&lt;/span&gt;
+
+&lt;div style="font-size:12px; line-height:1.6;"&gt;
+**Logistic regression** models the **probability** of fire occurrence as a function of FIRE_MONTH. It draws a decision boundary to classify months as fire or no-fire in a binary classification where the outcome is simply 0 or 1. 
+
+&lt;br&gt;
+**Why this as the baseline?**
+- A more traditional approach for its simplicity 
+- Captures seasonal patterns with a only single predictor
+- Establishes a performance benchmark to improve on
+&lt;/div&gt;
+![](Lakkaraju_Wildfires_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+]
+
+.pull-right[
+### &lt;span style="color: #2c4a2e;"&gt;Random Forest (Chosen Model)&lt;/span&gt;
+
+&lt;div style="font-size:12px; line-height:1.6;"&gt;
+&lt;b&gt;Random Forest&lt;/b&gt; builds &lt;b&gt;500 decision trees&lt;/b&gt;, each trained on a random subset of data and predictors. Final prediction is made by majority vote across all trees.
+
+&lt;/div&gt; 
+&lt;div style="font-size:10px; line-height:1.6;"&gt;
+&lt;br&gt;&lt;b&gt;Established Predictors:&lt;/b&gt;
+STATE · FIRE_YEAR · FIRE_MONTH · avg_lat · avg_lon
+&lt;br&gt;&lt;b&gt;&lt;i&gt;NOTE:&lt;/b&gt; FIRE_CAUSE was was omitted due to data leakage. It provides no information for no fires. Retained for exploratory analysis only.&lt;/i&gt;
+&lt;/div&gt;
+
+&lt;div style="font-size:11px; line-height:1.6;"&gt;
+&lt;br&gt;&lt;b&gt;Why Random Forest as the Chosen Model?&lt;/b&gt;
+- More popular for predictor models because its easier to interpret 
+- Good for non-linear relationships and evaluating multiple predictors 
+&lt;/div&gt; 
+![](Lakkaraju_Wildfires_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+]
+
+---
+class: inverse, center, middle
+background-color: #2c4a2e
+
+# Model Validation
+&lt;p style="color: white; font-size: 22px;"&gt;Evaluating the performance of both models using a temporal split on historical data.&lt;/p&gt;
+
+
+---
+#&lt;span style="color: #2d6a4f;"&gt;Summary of Model Performance&lt;/span&gt;
+.pull-left[
+&lt;table class="table" style="font-size: 18px; color: black; margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:center;color: white !important;background-color: rgba(44, 74, 46, 255) !important;"&gt; Model &lt;/th&gt;
+   &lt;th style="text-align:center;color: white !important;background-color: rgba(44, 74, 46, 255) !important;"&gt; Accuracy &lt;/th&gt;
+   &lt;th style="text-align:center;color: white !important;background-color: rgba(44, 74, 46, 255) !important;"&gt; AUC &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;background-color: rgba(245, 245, 245, 255) !important;font-weight: bold;"&gt; Logistic Regression &lt;/td&gt;
+   &lt;td style="text-align:center;background-color: rgba(245, 245, 245, 255) !important;"&gt; 92.57% &lt;/td&gt;
+   &lt;td style="text-align:center;background-color: rgba(245, 245, 245, 255) !important;"&gt; 0.701 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;font-weight: bold;color: rgba(44, 74, 46, 255) !important;background-color: rgba(232, 245, 233, 255) !important;font-weight: bold;"&gt; Random Forest &lt;/td&gt;
+   &lt;td style="text-align:center;font-weight: bold;color: rgba(44, 74, 46, 255) !important;background-color: rgba(232, 245, 233, 255) !important;"&gt; 97.87% &lt;/td&gt;
+   &lt;td style="text-align:center;font-weight: bold;color: rgba(44, 74, 46, 255) !important;background-color: rgba(232, 245, 233, 255) !important;"&gt; 0.989 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;br&gt;
+&lt;div style="font-size:14px; line-height:1.6;"&gt;
+&lt;b&gt;Validation:&lt;/b&gt; Temporal 70/30 split&lt;br&gt;
+- Temporal splits follow the natural progression of time unlike randomized splits which wouldn't work for historical data. This assures the model is being as reasonable as possible with handling real fire risks. &lt;br&gt; 
+&lt;b&gt;Train:&lt;/b&gt; 1992–2008 (8,568 rows)&lt;br&gt;
+&lt;b&gt;Test:&lt;/b&gt; 2009–2015 (3,528 rows)&lt;br&gt;
+- This means 70% of the data used to train the model is equivalent to studying for a test. The other 30% is measuring to see if the model actually retained the information it was built on like taking the test and scoring.
+&lt;br&gt;
+&lt;br&gt;&lt;span style="color:#2c4a2e;"&gt;&lt;b&gt;Random Forest successfully outperforms the baseline across both metrics.&lt;/b&gt;&lt;/span&gt;
+&lt;/div&gt;
+]
+
+.pull-right[
+![](Lakkaraju_Wildfires_files/figure-html/unnamed-chunk-9-1.png)&lt;!-- --&gt;
+
+&lt;div style="font-size:12px; line-height:1.5; margin-top:5px;"&gt;
+&lt;b&gt;What is Variable Importance?&lt;/b&gt;&lt;br&gt;
+For random forest, it measures how each predictor &lt;b&gt;contributes to the overall accuracy&lt;/b&gt;. A higher score means the variable is more critical for correct classification. 
+&lt;br&gt;
+&lt;br&gt;&lt;b&gt;avg_lon and avg_lat&lt;/b&gt; dominate which confirms &lt;b&gt;geography is the strongest indicator&lt;/b&gt; for predicting wildfire occurrence. It's more specific than STATE (South California is more susceptible to fires than the North). It shows &lt;b&gt;the model can understand spatial patterns&lt;b&gt; and not just generalized areas. 
+&lt;/div&gt;
+]
+
+---
+# &lt;span style="color: #2d6a4f;"&gt;Diagnostic Plots&lt;/span&gt;
+
+.pull-left[
+&lt;img src="roc_curve.gif" style="width:100%;"/&gt;
+&lt;p style="font-size:14px; text-align:center; color:#2c4a2e; margin-top:2px;"&gt;
+- The ROC curve shows how accurately the model is able to label fire vs no fire over time.
+&lt;br&gt; - True Positives are actual fires while False Positives are false alarms. Too many False Positives is &lt;b&gt;Type 1 error.&lt;/b&gt;
+&lt;br&gt; - The Random Forest &lt;b&gt;(AUC = 0.989)&lt;/b&gt; outperforms the baseline &lt;b&gt;(AUC = 0.701)&lt;/b&gt;. 
+&lt;br&gt; - The Random Forest curve indicates near perfect classification while the baseline performs only slightly better than if it just guessed randomly.
+&lt;/p&gt;
+]
+
+.pull-right[
+&lt;img src="auc_time.gif" style="width:100%;"/&gt;
+&lt;p style="font-size:14px; text-align:center; color:#2c4a2e; margin-top:2px;"&gt;
+- The AUC curve calculates the area under the ROC curve on a scale of 0 to 1.
+&lt;br&gt; - AUC remains consistently near to 1 across all test years for the Random Forest while the baseline hovers around 0.70. 
+&lt;br&gt; - This confirms the model generalizes well over time &lt;b&gt;while maintaining proper performance&lt;/b&gt; as time progresses.
+&lt;/p&gt;
+]
+
+---
+class: title-slide
+background-image: url(https://i.pinimg.com/736x/3e/77/35/3e773518d5213f92a064d1a783724e75.jpg)
+background-size: cover
+background-position: center
+
+&lt;div style="position: absolute; top: 4%; left: 4%; right: 4%; bottom: 4%; background-color: rgba(255,255,255,0.65); padding: 35px; border-radius: 10px;"&gt;
+
+&lt;h2 style="color:#2c4a2e; margin-bottom:15px;"&gt;Summary&lt;/h2&gt;
+
+&lt;div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; font-size:16px; line-height:1.9;"&gt;
+
+&lt;div&gt;
+&lt;b style="color:#2c4a2e;"&gt;Key EDA Insights&lt;/b&gt;&lt;br&gt;
+- Explored if &lt;b&gt;timing, location, and cause of wildfires&lt;/b&gt; can predict where and when notable fires are likely to occur across the US. &lt;br&gt;
+- Analysis revealed wildfires mainly concentrate along the &lt;b&gt;Pacific Northwest to Southeast corridor.&lt;/b&gt;&lt;br&gt;
+- Fire activity peaks in &lt;b&gt;June–August&lt;/b&gt; → &lt;b&gt;hotter climate and dry vegetation&lt;/b&gt; &lt;br&gt;
+- &lt;b&gt;Lightning&lt;/b&gt; mainly dominates Western fires while &lt;b&gt;Arson&lt;/b&gt; and drive Southeastern fires&lt;br&gt;
+- The largest fires cluster near the &lt;b&gt;Rocky Mountains&lt;/b&gt;. → natural causes amplify fire size in drier regions &lt;br&gt; 
+- &lt;b&gt;Appalachian Mountains&lt;/b&gt; → more preventable causes 
+&lt;/div&gt;
+
+&lt;div&gt;
+&lt;b style="color:#2c4a2e;"&gt;Model Performance &amp; Evaluation&lt;/b&gt;&lt;br&gt;
+- The Random Forest model achieves &lt;b&gt;97.87% accuracy&lt;/b&gt; and an &lt;b&gt;AUC of 0.989&lt;/b&gt; compared to the baseline's 92.57% accuracy and AUC of 0.701&lt;br&gt;
+- Geography (&lt;b&gt;avg_lat, avg_lon&lt;/b&gt;) is the strongest predictor of fire occurrence&lt;br&gt;
+- &lt;b&gt;Main Cause omitted&lt;/b&gt; from final prediction due to data leakage in binary outcomes &lt;Br&gt;
+- The model is able to understand &lt;b&gt;specific geographical occurrences&lt;/b&gt; using spatial units compared to state &lt;br&gt;
+- The model generalizes well over time with &lt;b&gt;no degradation&lt;/b&gt; in performance across 2009–2015&lt;br&gt;
+- &lt;b&gt;Takeaway&lt;/b&gt; → understanding seasonality and location can help &lt;b&gt;anticipate fire risk&lt;/b&gt; before it occurs
+&lt;/div&gt;
+
+&lt;/div&gt;
+&lt;/div&gt;
+---
+
+class: title-slide
+background-image: url(https://i.pinimg.com/736x/83/f7/b2/83f7b285bfdd1bed08e3f87303a9d918.jpg)
+background-size: cover
+background-position: center
+
+&lt;div style="position: absolute; top: 50%; left: 10%; right: 10%; transform: translateY(-50%); background-color: rgba(255,255,255,0.7); padding: 20px; border-radius: 10px; text-align: center;"&gt;
+  &lt;h1 style="color: #2c4a2e;"&gt;Thank you!&lt;/h1&gt;
+  &lt;h3 style="color: #2c4a2e; font-size: 26px;"&gt;STA 141A | Made with Xaringan&lt;/h3&gt;
+  &lt;p style="color: #2c4a2e; font-size: 16px;"&gt;
+    &lt;a href="https://www.kaggle.com/datasets/rtatman/188-million-us-wildfires/data" target="_blank" style="color: #2c4a2e;"&gt;Link to Dataset&lt;/a&gt;
+    &amp;nbsp;&amp;nbsp;|&amp;nbsp;&amp;nbsp;
+    &lt;a href="https://github.com/alakkaraju/wildfire-analysis-prediction" target="_blank" style="color: #2c4a2e;"&gt;Link to GitHub Repository&lt;/a&gt;
+  &lt;/p&gt;
+&lt;/div&gt;
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+  "highlightStyle": "github",
+  "highlightLines": true,
+  "countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
